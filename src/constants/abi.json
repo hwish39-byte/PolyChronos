@@ -1,0 +1,26 @@
+[
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "buyer", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "collateralAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "feeAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "returnAmount", "type": "uint256" },
+        { "indexed": true, "internalType": "uint256", "name": "outcomeIndex", "type": "uint256" }
+      ],
+      "name": "FPMMBuy",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "seller", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "collateralAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "feeAmount", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "returnAmount", "type": "uint256" },
+        { "indexed": true, "internalType": "uint256", "name": "outcomeIndex", "type": "uint256" }
+      ],
+      "name": "FPMMSell",
+      "type": "event"
+    }
+  ]
