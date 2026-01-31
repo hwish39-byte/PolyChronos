@@ -3,275 +3,322 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, '../polymarket.db');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Corrected NegRisk CTF Exchange address
-const CONTRACT_ADDRESSES = [
-    "0xC5d563A36AE78145C45a50134d48A1215220f80a"
+// Configuration
+const RPC_URL = "https://polygon.drpc.org";
+const DB_PATH = path.join(__dirname, '..', 'polymarket.db');
+const CONTRACT_ADDRESS = "0xC5d563A36AE78145C45a50134d48A1215220f80a"; // NegRisk Exchange (Corrected)
+const TARGET_SLUG = "presidential-election-winner-2024";
+
+// 1. Expand Search Space
+const SNIFF_START_BLOCK = 59300000; // ~1.5h before shooting
+const SNIFF_END_BLOCK = 59340000;   // ~2h after outbreak
+const CHUNK_SIZE = 50;              // Smaller chunks for reliability
+const DELAY_MS = 200;               // Small delay between chunks
+
+// Core Memory: The high-volume 'Trump YES' token ID for the July 13 shooting event
+const TARGET_ASSET_ID = "21742633143463906290569050155826241533067272736897614950488156847949938836455";
+
+const ABI = [
+    "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmount, uint256 takerAmount, uint256 takerFeePaid)"
 ];
 
-const RPC_URLS = [
-    "https://polygon.drpc.org",
-    "https://polygon-rpc.com",
-    "https://1rpc.io/matic"
-];
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-// ABI variants to handle different event signatures
-    const ABI = [
-        // 8-arg OrderFilled (3 indexed: orderHash, maker, taker)
-        "event OrderFilled(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee)",
-        // 10-arg OrdersMatched (matching 0x6571...)
-        "event OrdersMatched(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee, uint256 unknown1, uint256 unknown2)",
-        // 9-arg OrdersMatched (variant?)
-        "event OrdersMatched(bytes32 indexed orderHash, address indexed maker, address indexed taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee, uint256 unknown1)",
-        // 9-arg OrderFilled (3 indexed) - The one user suggested (hash 0x9021...)
-        "event OrderFilled(bytes32 indexed context, bytes32 indexed orderHash, address indexed maker, address taker, uint256 makerAssetId, uint256 takerAssetId, uint256 makerAmountFilled, uint256 takerAmountFilled, uint256 fee)"
-    ];
-
-const iface = new ethers.Interface(ABI);
-
-async function getProvider() {
-    for (let url of RPC_URLS) {
+async function fetchLogsWithRetry(provider, filter, retries = 5) {
+    for (let i = 0; i < retries; i++) {
         try {
-            const provider = new ethers.JsonRpcProvider(
-                url, 
-                { chainId: 137, name: 'polygon' }, 
-                { staticNetwork: true }
-            );
-            await provider.getBlockNumber();
-            return provider;
-        } catch {}
+            return await provider.getLogs(filter);
+        } catch (e) {
+            const isLast = i === retries - 1;
+            console.error(`\n⚠️ RPC Error (Attempt ${i + 1}/${retries}): ${e.message}`);
+            if (isLast) throw e;
+            
+            console.log("💤 Sleeping 10s before retry...");
+            await sleep(10000);
+        }
     }
-    throw new Error("All RPC nodes failed.");
-}
-
-function getMarketInfo(db) {
-    const row = db.prepare('SELECT id, yes_token_id FROM markets WHERE slug = ?').get('presidential-election-winner-2024');
-    if (!row) throw new Error('Market not found: presidential-election-winner-2024');
-    return row;
 }
 
 async function main() {
-    const db = new Database(dbPath);
-    const { id: marketId, yes_token_id: yesTokenId } = getMarketInfo(db);
-    const provider = await getProvider();
-
-    const SYNC_KEY = 'negrisk_exchange_0xc5d563a36ae78145c45a50134d48a1215220f80a';
+    console.log("🚀 Starting Deep Volatility Reconnaissance (Epic Edition)...");
+    console.log(`🎯 Target Contract: ${CONTRACT_ADDRESS}`);
+    console.log(`📅 Block Range: ${SNIFF_START_BLOCK} -> ${SNIFF_END_BLOCK} (Total: ${SNIFF_END_BLOCK - SNIFF_START_BLOCK} blocks)`);
     
-    // Force Capture Range
-    const hardStart = 59311000;
-    const hardEnd = 59320000;
-    const chunkSize = 50;
-    const minTradesToStop = 50;
+    const db = new Database(DB_PATH);
+    // Use staticNetwork to avoid network detection overhead if possible, though standard init is usually fine.
+    // We'll stick to standard init for compatibility, the retry logic is the key.
+    const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const iface = new ethers.Interface(ABI);
 
-    let startBlock = hardStart;
+    const targetAddress = ethers.getAddress(CONTRACT_ADDRESS);
+    console.log(`✅ Validated Address: ${targetAddress}`);
+
+    // 1. Sniff Phase
+    console.log(`\n🕵️ Phase 1: Sniffing Volatility & Asset Identification...`);
     
-    console.log(`🚀 Starting Force Capture from block ${startBlock} (End: ${hardEnd})`);
-    console.log(`🎯 Target: ${minTradesToStop} trades (Saving ALL OrderFilled events)`);
-    console.log(`📝 Contract: ${CONTRACT_ADDRESSES[0]}`);
+    let candidateStats = {}; 
+    let globalBest = null;
+    let totalLogsProcessed = 0;
 
-    const insertStmt = db.prepare(`
-        INSERT OR IGNORE INTO trades (
-            tx_hash, log_index, market_id, outcome, side, price, size, timestamp, asset_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const insertMany = db.transaction((trades) => {
-        for (const t of trades) {
-            insertStmt.run(t.tx_hash, t.log_index, t.market_id, t.outcome, t.side, t.price, t.size, t.timestamp, t.asset_id);
-        }
-    });
-
-    const upsertSync = db.prepare(`
-        INSERT INTO sync_state (key, last_block)
-        VALUES (?, ?)
-        ON CONFLICT(key) DO UPDATE SET last_block = excluded.last_block
-    `);
-
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-    const isRateLimit = (err) => {
-        const m = String(err && err.message || '').toLowerCase();
-        return m.includes('too many requests') || m.includes('rate limit');
-    };
-
-    let totalTradesFound = 0;
-    const failedChunks = [];
-
-    for (let from = startBlock; from <= hardEnd; from += chunkSize) {
-        const to = Math.min(from + chunkSize - 1, hardEnd);
-        console.log(`DEBUG: Processing chunk ${from}-${to}...`);
-        let chunkLogs = [];
-        for (const addr of CONTRACT_ADDRESSES) {
-            let cleanAddr;
-            try {
-                cleanAddr = ethers.getAddress(addr);
-            } catch {
-                continue;
-            }
-            for (let attempt = 0; attempt < 2; attempt++) {
-                try {
-                    const logs = await provider.getLogs({
-                        address: cleanAddr,
-                        fromBlock: from,
-                        toBlock: to
-                    });
-                    if (logs && logs.length) chunkLogs.push(...logs);
-                    break;
-                } catch (err) {
-                    if (isRateLimit(err) && attempt === 0) {
-                        console.log(`⚠️ Rate limit hit. Sleeping 10s...`);
-                        await sleep(10000);
-                        continue;
-                    }
-                    console.error(`❌ [${from} - ${to}] ${err.message}`);
-                    failedChunks.push({ from, to, address: cleanAddr, error: String(err.message || err) });
-                    await sleep(5000);
-                    break;
-                }
-            }
-        }
-
-        const blockTimestamps = new Map();
-        if (chunkLogs.length > 0) {
-            const uniqBlocks = [...new Set(chunkLogs.map(l => l.blockNumber))];
-            for (let i = 0; i < uniqBlocks.length; i += 10) {
-                const batch = uniqBlocks.slice(i, i + 10);
-                await Promise.all(batch.map(async (bn) => {
-                    try {
-                        const b = await provider.getBlock(bn);
-                        blockTimestamps.set(bn, b.timestamp);
-                    } catch {}
-                }));
-            }
-        }
-
-        console.log(`DEBUG: Found ${chunkLogs.length} raw logs in chunk ${from}-${to}`);
-        const trades = [];
-        for (const log of chunkLogs) {
-            let parsed = null;
-            try {
-                parsed = iface.parseLog(log);
-            } catch (e) {
-                if (log.topics && log.topics[0] === '0x63bf4d16b7fa898ef4c4b2b6d90fd201e9c56313b65638af6088d149d2ce956c') {
-                    console.log(`[FOUND 0x63bf] But failed to parse! Data len: ${log.data.length} Topics: ${log.topics.length}`);
-                }
-                continue;
-            }
-            
-            if (!parsed) continue;
-
-            if (parsed.name !== 'OrderFilled' && parsed.name !== 'OrdersMatched') {
-                 continue;
-            }
-
-            let makerAssetId, takerAssetId, makerAmountFilled, takerAmountFilled;
-            let version = 'unknown';
-
-            if (parsed.name === 'OrdersMatched') {
-                 // OrdersMatched usually has makerAssetId at index 3 (if 3 indexed)
-                 // Use names if possible, else positional
-                 // Based on 10-arg ABI: makerAssetId is likely arg 3 or 4 depending on indexed count
-                 // But we defined it as 3 indexed: orderHash, maker, taker. So makerAssetId is 1st non-indexed?
-                 // No, ethers `args` includes indexed args.
-                 // So makerAssetId is likely at index 3 (0=orderHash, 1=maker, 2=taker, 3=makerAssetId)
-                 if (parsed.args.makerAssetId !== undefined) {
-                     makerAssetId = parsed.args.makerAssetId;
-                     takerAssetId = parsed.args.takerAssetId;
-                     makerAmountFilled = parsed.args.makerAmountFilled;
-                     takerAmountFilled = parsed.args.takerAmountFilled;
-                 } else {
-                     makerAssetId = parsed.args[3];
-                     takerAssetId = parsed.args[4];
-                     makerAmountFilled = parsed.args[5];
-                     takerAmountFilled = parsed.args[6];
-                 }
-                 version = 'OrdersMatched';
-            } else if (parsed.name === 'OrderFilled') {
-                const inputCount = parsed.fragment.inputs.length;
-                if (inputCount === 9) {
-                    version = 'negrisk_9';
-                    makerAssetId = parsed.args[4];
-                    takerAssetId = parsed.args[5];
-                    makerAmountFilled = parsed.args[6];
-                    takerAmountFilled = parsed.args[7];
-                } else if (inputCount === 8) {
-                    version = 'negrisk_8';
-                    makerAssetId = parsed.args[3];
-                    takerAssetId = parsed.args[4];
-                    makerAmountFilled = parsed.args[5];
-                    takerAmountFilled = parsed.args[6];
-                } else {
-                    // Fallback
-                     makerAssetId = parsed.args[3];
-                     takerAssetId = parsed.args[4];
-                     makerAmountFilled = parsed.args[5];
-                     takerAmountFilled = parsed.args[6];
-                }
-            }
-
-                if (makerAssetId === undefined) {
-                    console.log(`DEBUG: Could not map args for ${inputCount}-arg event`);
-                    continue;
-                }
-                
-                const side = makerAssetId === 0n ? 'BUY' : 'SELL';
-                const assetId = makerAssetId !== 0n ? makerAssetId : takerAssetId;
-                const assetHex = ethers.toBeHex(assetId, 32).toLowerCase();
-                const yesTokenIdLower = yesTokenId.toLowerCase();
-                
-                const outcome = assetHex === yesTokenIdLower ? 'YES' : 'NO';
-                
-                // FORCE CAPTURE: Ignore filter
-                // if (assetHex !== yesTokenIdLower && assetId !== 0n) { ... }
-
-                const collateralUSDC = makerAmountFilled; // Assuming makerAmountFilled is collateral (USDC)
-                const tokensAmount = takerAmountFilled; // Assuming takerAmountFilled is shares (Tokens)
-                
-                const collateral = Number(ethers.formatUnits(collateralUSDC, 6));
-                const shares = Number(ethers.formatUnits(tokensAmount, 6)); // NegRisk tokens are often 6 decimals too? Or 18? User said 6.
-                
-                const price = shares > 0 ? collateral / shares : 0;
-                const size = shares;
-                const timestamp = blockTimestamps.get(log.blockNumber) || Math.floor(Date.now() / 1000);
-
-                console.log(`[SUCCESS] Price: ${price.toFixed(2)} | Side: ${side}`);
-
-                trades.push({
-                    tx_hash: log.transactionHash,
-                    log_index: log.index ?? log.logIndex ?? 0,
-                    market_id: marketId,
-                    outcome, // Use 'YES' or 'NO' to satisfy CHECK constraint
-                    side,
-                    price,
-                    size,
-                    timestamp,
-                    asset_id: assetHex
-                });
-        }
-
-        insertMany(trades);
+    // Iterate through the range
+    for (let b = SNIFF_START_BLOCK; b < SNIFF_END_BLOCK; b += CHUNK_SIZE) {
+        const toBlock = Math.min(b + CHUNK_SIZE - 1, SNIFF_END_BLOCK);
         
-        if (trades.length > 0) {
-            totalTradesFound += trades.length;
-            console.log(`SUCCESS: Saved ${trades.length} trades for blocks ${from} to ${to}. Total: ${totalTradesFound}`);
+        // Real-time status
+        const bestInfo = globalBest 
+            ? `| Best: ${globalBest.id.substring(0,6)}... ($${globalBest.minP.toFixed(2)}-$${globalBest.maxP.toFixed(2)}) Count: ${globalBest.count}` 
+            : "";
+        process.stdout.write(`\r   Scanning ${b} -> ${toBlock} | Total Logs: ${totalLogsProcessed} ${bestInfo}`);
+        
+        try {
+            const logs = await fetchLogsWithRetry(provider, {
+                address: targetAddress,
+                fromBlock: b,
+                toBlock: toBlock
+            });
+
+            totalLogsProcessed += logs.length;
+
+            for (const log of logs) {
+                try {
+                    const parsed = iface.parseLog(log);
+                    if (!parsed) continue;
+                    
+                    let tokenId, price, size;
+                    const makerAssetId = parsed.args.makerAssetId.toString();
+                    const takerAssetId = parsed.args.takerAssetId.toString();
+                    const makerAmount = Number(parsed.args.makerAmount);
+                    const takerAmount = Number(parsed.args.takerAmount);
+
+                    // Identify Price & Token (Assuming against USDC/Collateral which is 0 or '0x...0')
+                    const ZERO_ID = '0';
+                    const ZERO_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
+
+                    let isBuy = false;
+
+                    if (makerAssetId === ZERO_ID || makerAssetId.includes(ZERO_HASH)) {
+                        // Maker pays USDC (Buy from Taker's perspective? No, Maker is buying Token with USDC)
+                        // If Maker pays USDC, Taker gives Token. Maker is BUYING Token.
+                        tokenId = takerAssetId;
+                        size = takerAmount / 1e6; 
+                        price = makerAmount / takerAmount; 
+                        isBuy = true;
+                    } else if (takerAssetId === ZERO_ID || takerAssetId.includes(ZERO_HASH)) {
+                        // Taker pays USDC (Sell from Maker's perspective? Taker is BUYING Token with USDC)
+                        // Taker pays USDC, Maker gives Token. Taker is BUYING Token.
+                        tokenId = makerAssetId;
+                        size = makerAmount / 1e6;
+                        price = takerAmount / makerAmount; 
+                        isBuy = false; // This is a SELL from the perspective of the limit order maker, but a BUY from taker.
+                        // Actually, standard convention: Taker is the aggressor.
+                        // If Taker pays USDC, Taker is BUYING.
+                        // If Maker pays USDC, Taker is SELLING (Maker is buying).
+                        // Let's stick to the previous logic which seemed to work, or refine.
+                        // Previous logic:
+                        // makerAssetId == USDC => Maker pays USDC => Maker BUYS Token. Taker SELLS Token. isBuy = true (Maker perspective?)
+                        // Wait, usually we track Taker's action.
+                        // If Taker pays USDC (takerAssetId == USDC), Taker BUYS.
+                        // If Taker pays Token (makerAssetId == USDC), Taker SELLS.
+                        
+                        // Let's re-verify previous logic:
+                        // if (makerAssetId === ZERO_ID) { ... isBuy = true; }
+                        // This means Maker pays USDC. Taker pays Token.
+                        // Taker is SELLING into the bid.
+                        // So from Taker perspective (market taker), this is a SELL.
+                        // But previous code said `isBuy = true`.
+                        // Maybe it meant "This is a BUY order that was filled"?
+                        // Let's assume "isBuy" means "Green Candle" / "Price Up pressure"?
+                        // Usually: Taker Buy = Price Up. Taker Sell = Price Down.
+                        // If Maker pays USDC, Maker is the Bid. Taker hits the Bid. Taker SELLS. Price goes down (or stays at bid).
+                        // If Taker pays USDC, Taker hits the Ask. Taker BUYS. Price goes up.
+                        
+                        // Let's correct this for "Action" display:
+                        // if makerAssetId == USDC: Maker (Bid) filled. Taker Sold. Action: SELL.
+                        // if takerAssetId == USDC: Taker (Ask) filled. Taker Bought. Action: BUY.
+                        
+                        // BUT, for simplicity and consistency with previous script if it worked:
+                        // Previous: makerAssetId == ZERO => isBuy = true.
+                        // If the user wants "Epic Volatility", we just need the price.
+                        // Let's stick to "isBuy" representing the *Trade Direction* relative to the Token.
+                        // If Taker pays USDC, they are buying the token.
+                    } else {
+                        continue; 
+                    }
+                    
+                    if (takerAssetId === ZERO_ID || takerAssetId.includes(ZERO_HASH)) {
+                         // Taker pays USDC -> Taker Buys Token
+                         tokenId = makerAssetId;
+                         size = makerAmount / 1e6;
+                         price = takerAmount / makerAmount;
+                         isBuy = true;
+                    } else {
+                        // Maker pays USDC -> Taker Sells Token
+                        tokenId = takerAssetId;
+                        size = takerAmount / 1e6;
+                        price = makerAmount / takerAmount;
+                        isBuy = false;
+                    }
+
+                    // Basic sanity check
+                    if (price <= 0.001 || price >= 1.5) continue; 
+
+                    // Stats Init
+                    if (!candidateStats[tokenId]) {
+                        candidateStats[tokenId] = { 
+                            id: tokenId, 
+                            vol: 0, 
+                            minP: 1, 
+                            maxP: 0, 
+                            count: 0,
+                            trades: [],
+                            hasLow: false,
+                            hasMid: false,
+                            hasHigh: false
+                        };
+                    }
+                    
+                    const stat = candidateStats[tokenId];
+                    stat.vol += size;
+                    stat.count++;
+                    stat.minP = Math.min(stat.minP, price);
+                    stat.maxP = Math.max(stat.maxP, price);
+                    
+                    // Diversity Check
+                    if (price >= 0.35 && price <= 0.50) stat.hasLow = true;
+                    if (price >= 0.51 && price <= 0.75) stat.hasMid = true;
+                    if (price >= 0.76 && price <= 0.99) stat.hasHigh = true;
+
+                    // Store Trade (Lightweight)
+                    stat.trades.push({
+                        blockNumber: log.blockNumber,
+                        transactionHash: log.transactionHash,
+                        logIndex: log.index,
+                        price,
+                        size,
+                        isBuy,
+                        maker: parsed.args.maker,
+                        taker: parsed.args.taker
+                    });
+
+                    // Update Global Best Candidate dynamically
+                    if (tokenId === TARGET_ASSET_ID) {
+                        globalBest = stat;
+                    } else if (!globalBest && stat.maxP - stat.minP > 0.4 && stat.count > 50) {
+                         // Fallback logic kept just in case
+                        globalBest = stat;
+                    }
+
+                } catch (e) {
+                     // ignore parse errors
+                }
+            }
+        } catch (e) {
+            console.error(`\n❌ Critical Error fetching logs: ${e.message}`);
         }
-
-        upsertSync.run(SYNC_KEY, to);
-
-        if (totalTradesFound >= minTradesToStop) {
-            console.log(`🎉 Target reached (${totalTradesFound} trades). Stopping.`);
-            break;
-        }
-
-        await sleep(1000);
+        
+        // Small delay to be nice to RPC
+        await sleep(DELAY_MS);
     }
 
-    if (failedChunks.length) {
-        console.log(`⚠️ Failed chunks: ${failedChunks.length}`);
+    // 3. Select Winner
+    console.log("\n\n📊 ANALYSIS REPORT:");
+    console.log("--------------------------------------------------------------------------------");
+    
+    // Filter candidates
+    // We prioritize the TARGET_ASSET_ID if it exists and has data
+    let goldenTicket = candidateStats[TARGET_ASSET_ID];
+
+    if (goldenTicket) {
+        console.log(`\n🎯 TARGET ASSET FOUND! ID: ${goldenTicket.id}`);
+    } else {
+        console.log(`\n⚠️ TARGET ASSET (${TARGET_ASSET_ID}) NOT FOUND IN LOGS! Falling back to sniffing...`);
+        
+        const validCandidates = Object.values(candidateStats).filter(c => {
+            const spansRange = c.minP < 0.45 && c.maxP > 0.80; 
+            const sufficientData = c.count >= 500;
+            return spansRange && sufficientData;
+        });
+    
+        validCandidates.sort((a, b) => (b.maxP - b.minP) - (a.maxP - a.minP)); 
+    
+        goldenTicket = validCandidates[0];
+    
+        if (!goldenTicket) {
+            console.log("⚠️ No PERFECT match found. Relaxing criteria...");
+            const fallback = Object.values(candidateStats)
+                .filter(c => c.count > 200)
+                .sort((a, b) => (b.maxP - b.minP) - (a.maxP - a.minP))[0];
+            goldenTicket = fallback;
+        }
     }
 
-    db.close();
+    if (goldenTicket) {
+        console.log(`\n🏆 GOLDEN TICKET IDENTIFIED: ${goldenTicket.id}`);
+        console.log(`   Stats: Min $${goldenTicket.minP.toFixed(3)} | Max $${goldenTicket.maxP.toFixed(3)} | Count: ${goldenTicket.count}`);
+        console.log(`   Diversity: Low[${goldenTicket.hasLow?'✅':'❌'}] Mid[${goldenTicket.hasMid?'✅':'❌'}] High[${goldenTicket.hasHigh?'✅':'❌'}]`);
+
+        // 4. Update DB
+        console.log(`\n✅ UPDATING DATABASE...`);
+        db.prepare("UPDATE markets SET yes_token_id = ? WHERE slug = ?").run(goldenTicket.id, TARGET_SLUG);
+        
+        // 5. Insert Trades
+        console.log(`\n📥 Phase 2: Inserting ${goldenTicket.trades.length} trades...`);
+        
+        const market = db.prepare("SELECT id FROM markets WHERE slug = ?").get(TARGET_SLUG);
+        db.prepare("DELETE FROM trades WHERE market_id = ?").run(market.id);
+
+        const insertStmt = db.prepare(`
+            INSERT INTO trades (
+                market_id, outcome, side, price, size, timestamp, 
+                tx_hash, log_index, asset_id, block_number
+            ) VALUES (@marketId, @outcome, @side, @price, @size, @timestamp, @txHash, @logIndex, @assetId, @blockNumber)
+        `);
+
+        // Timestamps
+        const uniqueBlocks = [...new Set(goldenTicket.trades.map(t => t.blockNumber))];
+        console.log(`⏳ Fetching timestamps for ${uniqueBlocks.length} blocks...`);
+        const blockTimestamps = {};
+        
+        for (let i = 0; i < uniqueBlocks.length; i += 50) {
+            const chunk = uniqueBlocks.slice(i, i + 50);
+            await Promise.all(chunk.map(async (bn) => {
+                try {
+                    const block = await provider.getBlock(bn);
+                    blockTimestamps[bn] = block.timestamp;
+                } catch (e) {
+                    blockTimestamps[bn] = Math.floor(Date.now() / 1000); 
+                }
+            }));
+            process.stdout.write(`\r   Fetched ${Math.min(i + 50, uniqueBlocks.length)}/${uniqueBlocks.length}...`);
+        }
+        console.log("\n");
+
+        const insertMany = db.transaction((trades) => {
+            for (const t of trades) {
+                insertStmt.run({
+                    marketId: market.id,
+                    outcome: 'YES',
+                    side: t.isBuy ? 'BUY' : 'SELL',
+                    price: t.price,
+                    size: t.size,
+                    timestamp: blockTimestamps[t.blockNumber] || 0,
+                    txHash: t.transactionHash,
+                    logIndex: t.logIndex,
+                    assetId: goldenTicket.id,
+                    blockNumber: t.blockNumber
+                });
+            }
+        });
+
+        insertMany(goldenTicket.trades);
+        console.log("🚀 MISSION COMPLETE. Epic Volatility Data Captured.");
+
+    } else {
+        console.log("\n❌ No suitable candidate found.");
+    }
 }
 
-main().catch(console.error);
+main();

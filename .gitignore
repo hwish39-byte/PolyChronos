@@ -14,7 +14,7 @@ dist-ssr
 
 # Database
 data/
-*.db
+#*.db
 *.sqlite
 *.sqlite3
 

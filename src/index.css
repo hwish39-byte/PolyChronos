@@ -11,6 +11,18 @@
   --animate-flash-shake: flash-shake 0.5s ease-out;
   --animate-zoom-in: zoom-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --animate-fade-in-out: fade-in-out 3s forwards;
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-progress-indeterminate: progress-indeterminate 1.5s ease-in-out infinite;
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes progress-indeterminate {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 
   @keyframes shake {
     10%, 90% { transform: translate3d(-1px, 0, 0); }
@@ -66,7 +78,6 @@ body {
   color: var(--text-color);
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   overflow-x: hidden;
-  padding-bottom: 80px;
 }
 
 /* Custom Component Classes */

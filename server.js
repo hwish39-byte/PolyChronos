@@ -30,9 +30,9 @@ app.get('/api/trades/:slug', (req, res) => {
         }
 
         // Get trades for market
-        // Format: [{ time: number, price: number, side: string, outcome: string }]
+        // Format: [{ time: number, price: number, side: string, outcome: string, blockNumber: number }]
         const trades = db.prepare(`
-            SELECT timestamp as time, price, side, outcome 
+            SELECT timestamp as time, price, side, outcome, block_number as blockNumber
             FROM trades 
             WHERE market_id = ? 
             ORDER BY timestamp ASC
