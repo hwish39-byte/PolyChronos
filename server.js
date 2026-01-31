@@ -7,10 +7,16 @@ app.use(cors());
 const port = 3001;
 const db = new Database('polymarket.db');
 
-// GET /api/markets - List available scenarios
+// GET /api/markets - List available scenarios with stats
 app.get('/api/markets', (req, res) => {
     try {
-        const markets = db.prepare('SELECT * FROM markets').all();
+        const markets = db.prepare(`
+            SELECT 
+                m.*,
+                (SELECT price FROM trades WHERE market_id = m.id ORDER BY timestamp DESC LIMIT 1) as last_price,
+                (SELECT SUM(size * price) FROM trades WHERE market_id = m.id) as volume
+            FROM markets m
+        `).all();
         res.json(markets);
     } catch (error) {
         console.error('Error fetching markets:', error);

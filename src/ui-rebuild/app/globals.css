@@ -1,0 +1,261 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #0a0a1a;
+  --foreground: #f0e6ff;
+  --card: rgba(20, 10, 40, 0.7);
+  --card-foreground: #f0e6ff;
+  --popover: rgba(20, 10, 40, 0.95);
+  --popover-foreground: #f0e6ff;
+  --primary: #00d4ff;
+  --primary-foreground: #0a0a1a;
+  --secondary: rgba(0, 212, 255, 0.15);
+  --secondary-foreground: #00d4ff;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #a0a0c0;
+  --accent: #ffd700;
+  --accent-foreground: #0a0a1a;
+  --destructive: #ff4466;
+  --destructive-foreground: #ffffff;
+  --border: rgba(100, 80, 200, 0.3);
+  --input: rgba(100, 80, 200, 0.2);
+  --ring: #00d4ff;
+  --chart-1: #00d4ff;
+  --chart-2: #00ff88;
+  --chart-3: #ff4466;
+  --chart-4: #ffd700;
+  --chart-5: #ff66cc;
+  --radius: 0.75rem;
+  
+  /* Cosmic rainbow colors */
+  --cosmic-cyan: #00d4ff;
+  --cosmic-pink: #ff66cc;
+  --cosmic-orange: #ff9933;
+  --cosmic-yellow: #ffd700;
+  --cosmic-purple: #9966ff;
+  --cosmic-green: #00ff88;
+}
+
+.dark {
+  --background: #0a0a1a;
+  --foreground: #f0e6ff;
+  --card: rgba(20, 10, 40, 0.7);
+  --card-foreground: #f0e6ff;
+  --popover: rgba(20, 10, 40, 0.95);
+  --popover-foreground: #f0e6ff;
+  --primary: #00d4ff;
+  --primary-foreground: #0a0a1a;
+  --secondary: rgba(0, 212, 255, 0.15);
+  --secondary-foreground: #00d4ff;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #a0a0c0;
+  --accent: #ffd700;
+  --accent-foreground: #0a0a1a;
+  --destructive: #ff4466;
+  --destructive-foreground: #ffffff;
+  --border: rgba(100, 80, 200, 0.3);
+  --input: rgba(100, 80, 200, 0.2);
+  --ring: #00d4ff;
+  --chart-1: #00d4ff;
+  --chart-2: #00ff88;
+  --chart-3: #ff4466;
+  --chart-4: #ffd700;
+  --chart-5: #ff66cc;
+}
+
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: radial-gradient(ellipse at 50% 0%, #1a1040 0%, #0a0a1a 50%, #050510 100%);
+  }
+}
+
+/* Custom scrollbar - cosmic theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(100, 80, 200, 0.1);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00d4ff, #ff66cc);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00d4ff, #ffd700);
+}
+
+/* Cosmic text glow effects */
+.cosmic-text-cyan {
+  text-shadow: 
+    0 0 10px rgba(0, 212, 255, 0.6),
+    0 0 20px rgba(0, 212, 255, 0.4),
+    0 0 40px rgba(0, 212, 255, 0.2);
+}
+
+.cosmic-text-gold {
+  text-shadow: 
+    0 0 10px rgba(255, 215, 0, 0.6),
+    0 0 20px rgba(255, 215, 0, 0.4),
+    0 0 40px rgba(255, 215, 0, 0.2);
+}
+
+.cosmic-text-pink {
+  text-shadow: 
+    0 0 10px rgba(255, 102, 204, 0.6),
+    0 0 20px rgba(255, 102, 204, 0.4),
+    0 0 40px rgba(255, 102, 204, 0.2);
+}
+
+/* Cosmic card glow */
+.cosmic-card {
+  background: rgba(20, 10, 40, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(100, 80, 200, 0.3);
+  box-shadow: 
+    0 0 20px rgba(100, 80, 200, 0.2),
+    inset 0 0 30px rgba(100, 80, 200, 0.1);
+}
+
+.cosmic-card-hover {
+  box-shadow: 
+    0 0 30px rgba(0, 212, 255, 0.3),
+    0 0 60px rgba(255, 102, 204, 0.2),
+    inset 0 0 30px rgba(100, 80, 200, 0.15);
+}
+
+/* Rainbow border animation */
+@keyframes rainbow-border {
+  0% { border-color: #00d4ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+  25% { border-color: #ff66cc; box-shadow: 0 0 20px rgba(255, 102, 204, 0.4); }
+  50% { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+  75% { border-color: #ff9933; box-shadow: 0 0 20px rgba(255, 153, 51, 0.4); }
+  100% { border-color: #00d4ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+}
+
+.rainbow-border {
+  animation: rainbow-border 4s ease-in-out infinite;
+}
+
+/* Star twinkle animation */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* Aurora swirl animation */
+@keyframes aurora-swirl {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.aurora-swirl {
+  animation: aurora-swirl 20s linear infinite;
+}
+
+/* Pulse animation for alerts */
+@keyframes cosmic-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(255, 68, 102, 0.5);
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 40px rgba(255, 68, 102, 0.7);
+  }
+}
+
+.cosmic-pulse {
+  animation: cosmic-pulse 1.5s ease-in-out infinite;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Clock hand rotation */
+@keyframes clock-second {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes clock-minute {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.clock-second {
+  animation: clock-second 60s linear infinite;
+  transform-origin: center center;
+}
+
+.clock-minute {
+  animation: clock-minute 3600s linear infinite;
+  transform-origin: center center;
+}

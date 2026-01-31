@@ -1,0 +1,15 @@
+{
+  "name": "PolyChronos 荣誉勋章: 顺势交易员",
+  "description": "授予在 PolyChronos 历史回测中表现卓越的顶级交易员。",
+  "image": "/medals/5.png",
+  "attributes": [
+    {
+      "trait_type": "评级",
+      "value": "顺势交易员"
+    },
+    {
+      "trait_type": "达成条件",
+      "value": "盈利 10% - 50%"
+    }
+  ]
+}
