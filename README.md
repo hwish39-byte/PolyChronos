@@ -1,7 +1,3 @@
-<div align="center">
-  <img src="https://via.placeholder.com/800x200?text=PolyChronos+Logo" alt="PolyChronos Logo" width="100%" />
-</div>
-
 # PolyChronos
 
 > **穿越链上历史，在真实回测中掌握预测市场的艺术。**
