@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Lobby from './components/Lobby';
 import LoadingScreen from './components/LoadingScreen';
@@ -13,6 +13,34 @@ function App() {
   const [simulationData, setSimulationData] = useState([]);
   const [blindMode, setBlindMode] = useState(false);
   const [resultData, setResultData] = useState(null);
+
+  // --- Browser History Sync ---
+  useEffect(() => {
+    // 1. Initial State Replacement
+    if (!window.history.state) {
+      window.history.replaceState({ mode: 'lobby' }, '');
+    }
+
+    // 2. Listen for Popstate (Back/Forward)
+    const handlePopState = (event) => {
+      if (event.state && event.state.mode) {
+        setAppMode(event.state.mode);
+      } else {
+        setAppMode('lobby');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // 3. Push State on Change
+  useEffect(() => {
+    const currentHistoryMode = window.history.state?.mode;
+    if (currentHistoryMode !== appMode) {
+      window.history.pushState({ mode: appMode }, '');
+    }
+  }, [appMode]);
 
   const handleSelectScenario = async (scenario) => {
     setSelectedScenario(scenario);

@@ -1,79 +1,123 @@
-# PolyChronos - 穿越链上历史，掌握预测艺术
+<div align="center">
+  <img src="https://via.placeholder.com/800x200?text=PolyChronos+Logo" alt="PolyChronos Logo" width="100%" />
+</div>
 
-**PolyChronos** 是一个基于真实链上成交数据的交互式预测市场“实战模拟器”。本项目旨在通过回测历史高波动事件，训练用户的交易直觉和信息反应能力。
+# PolyChronos
+
+> **穿越链上历史，在真实回测中掌握预测市场的艺术。**
 
 ---
 
-## 🚀 快速开始 (Quick Start)
+##  赞助商技术栈列表 (Sponsor Tech Stack)
 
-> **特别说明**：本项目内置了预填充的 SQLite 数据库，包含完整的历史事件数据，**无需自行抓取或配置 RPC 即可直接运行**。
+以下是本项目集成的赞助商技术，方便检索与致谢：
 
-### 运行步骤
+| 赞助商 | 使用的具体技术点 |
+| :--- | :--- |
+| **DataDance (数据舞蹈)** | 使用 SDK 进行高频成交日志索引、去重与数据预处理 |
+| **Polygon (多边形)** | 核心数据源，深度解析 NegRisk Exchange 原始合约日志 |
+| **SpoonOS** | AI 驱动的历史新闻流还原与“毒舌教练”点评逻辑重构 |
+| **Polymarket (多元市场)** | 核心业务模型参考，遵循 Gnosis CTF 协议规范 |
 
-1.  **安装依赖**
+---
+
+## 🛠 技术架构 (Tech Architecture)
+
+本项目采用现代化的全栈架构，确保高性能与极致的用户体验：
+
+*   ** 前端 (Frontend)**
+    *   React 18 + Tailwind CSS v4
+    *   Recharts (60FPS 插值平滑动效)
+*   ** 后端 (Backend)**
+    *   Node.js + Express
+    *   better-sqlite3 (高性能本地嵌入式数据库)
+*   ** Web3 交互**
+    *   Wagmi + RainbowKit + Ethers.js v6
+*   ** 数据索引层**
+    *   自主开发的区块链日志解码引擎，直接处理 Raw Event Logs
+
+---
+
+##  核心亮点 (Core Highlights)
+
+### 1.协议级深度解码
+不依赖三方 API，直接还原 **Gnosis CTF (Conditional Token Framework)** 协议下的 `collateralAmount` 与 `returnAmount`，精准重现 7.13 事件赔率波动。
+
+### 2.消除“事后诸葛亮”偏差
+强制引入 **3秒执行延迟** 与 **5% 惩罚性滑点**，向用户证明即使已知结局，在 Web3 真实阻力下捕捉 Alpha 依然极具挑战。
+
+### 3.灵魂绑定奖励机制
+用户回测战绩将根据 ROI 与响应时延生成“交易员画像”，并可在 Sepolia 测试网铸造不可转让的 **SBT (灵魂绑定代币)** 勋章。
+
+---
+
+##  快速开始 (Quick Start)
+
+### 环境要求
+*   Node.js 18+ / npm
+*   有效的 Polygon RPC URL (用于数据同步)
+*   Sepolia 测试网测试币 (用于勋章铸造)
+
+### 安装步骤
+
+1.  **克隆仓库**
+    ```bash
+    git clone https://github.com/hwish39-byte/PolyChronos.git
+    ```
+
+2.  **安装依赖**
     ```bash
     npm install
     ```
 
-2.  **启动后端服务 (终端 A)**
+3.  **配置环境变量**
+    ```bash
+    cp .env.example .env
+    # 请在 .env 中配置 RPC 地址
+    ```
+
+### 运行命令
+
+1.  **初始化数据库**
+    ```bash
+    npm run init-db
+    ```
+
+2.  **同步历史数据**
+    ```bash
+    node scripts/fetchScenario.js
+    # 注意：项目已内置 10,000 区块数据，初次体验可跳过此步
+    ```
+
+3.  **启动后端 API**
     ```bash
     node server.js
+    # 服务端口: 3001
     ```
 
-3.  **启动前端界面 (终端 B)**
+4.  **启动前端界面**
     ```bash
     npm run dev
+    # 服务端口: 5173
     ```
 
-4.  打开浏览器访问本地地址（通常为 `http://localhost:5173`）即可开始体验。
+---
+
+##  功能说明 (Features)
+
+*   **🕹️ 时空回放**：线性插值技术实现 K 线小球丝滑移动，无感跳跃。
+*   **💹 连续交易模式**：支持 10万U 本金、自由平仓与杠杆操作模拟。
+*   **🤖 AI 实时情报流**：根据区块高度动态推送带信噪比的历史推特流。
 
 ---
 
-## ✨ 核心功能 (Core Features)
+##  数据来源 (Data Source)
 
-### 1. 丝滑时空回溯 (Smooth Time Travel)
-告别卡顿的图表体验。PolyChronos 采用**线性插值 (Linear Interpolation)** 技术，将离散的链上交易数据转化为 **60FPS** 的丝滑 K 线动画，让每一秒的市场脉动都清晰可见。
-
-### 2. 真实交易模拟 (Real-world Simulation)
-- **高额模拟资金**：提供 **100,000 USDC** 初始资金，让您在无风险环境中体验大额资金的心理博弈。
-- **专业交易体验**：支持自定义仓位买入（25% / 50% / MAX），并内置模拟了真实网络的交易延迟，还原最真实的链上抢跑体验。
-- **智能辅助**：自动计算最大可买入数量（扣除 0.1% 手续费），让操作更流畅。
-
-### 3. 深度数据解码 (Deep Data Decoding)
-这不是简单的价格回放。我们直接还原了 **Polygon 链上 Gnosis CTF 协议** 的原始成交日志，挖掘出每一笔真实发生的交易，为您呈现最纯粹的市场微观结构。
+*   **来源**：Polygon Mainnet
+*   **方式**：通过 **DataDance SDK** 与原始 RPC 节点获取 **NegRisk_CTFExchange** 合约 (`0xC5d563...`) 的 `OrderFilled` 原始日志，解码率为 100%。
 
 ---
 
-## 🛠 技术架构 (Tech Stack)
-
-### 前端 (Frontend)
-- **框架**：React + Tailwind CSS
-- **可视化**：Recharts (深度定制 0.3-0.9 聚焦坐标轴，适配预测市场赔率特性)
-- **动画**：RequestAnimationFrame (RAF) 实现高帧率渲染
-
-### 后端 (Backend)
-- **运行时**：Node.js + Express
-- **数据库**：better-sqlite3 (高性能本地嵌入式数据库)
-
-### 数据源 (Data Source)
-- **数据获取**：DataDance SDK
-- **解析引擎**：自定义 RPC Log 解码器，精准提取 `Trade` 事件
-
----
-
-## 🏆 赛道契合度 (Track 3 Requirements)
-
-本项目完美契合 **Predictive Markets** 赛道要求，致力于提升预测市场的用户体验与教育普及：
-
-### 🔍 透明度 (Transparency)
-我们将晦涩难懂的十六进制链上日志 (Hex Logs) 转化为直观、动态的 K 线图表，让每一笔链上交易都变得清晰透明，人人可查。
-
-### 💡 可用性 (Usability)
-通过游戏化的模拟体验，极大地降低了新手理解预测市场赔率波动（0-1 概率区间）的门槛，帮助用户快速掌握二元期权的定价逻辑。
-
-### 🎯 激励机制 (Incentives)
-内置独创的**交易员画像评分系统**。系统会根据用户的 ROI (投资回报率) 和面对突发新闻的响应时延，生成多维度的能力评估报告，激励用户不断磨练交易技艺。
-
----
-
-*PolyChronos Team © 2026*
+<div align="center">
+  <i>Made with ❤️ by PolyChronos Team</i>
+</div>

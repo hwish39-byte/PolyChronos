@@ -75,16 +75,16 @@ const StatItem = ({ label, value, subValue, type = 'neutral', icon: Icon }) => {
   };
 
   return (
-    <div className="flex flex-col items-center p-1.5 bg-[#0a0a1a]/40 rounded-lg border border-[#6450c8]/20">
-      <div className="flex items-center gap-1 mb-0.5">
-        {Icon && <Icon className={cn("w-2.5 h-2.5", colors[type])} />}
-        <span className="text-[8px] uppercase tracking-wider text-[#a0a0c0]">{label}</span>
+    <div className="flex flex-col items-center p-3 bg-[#0a0a1a]/40 rounded-lg border border-[#6450c8]/20">
+      <div className="flex items-center gap-1.5 mb-1">
+        {Icon && <Icon className={cn("w-3.5 h-3.5", colors[type])} />}
+        <span className="text-xs uppercase tracking-wider text-[#a0a0c0]">{label}</span>
       </div>
-      <div className={cn("text-xs font-bold font-mono", colors[type])}>
+      <div className={cn("text-lg font-bold font-mono", colors[type])}>
         {value}
       </div>
       {subValue && (
-        <div className="text-[8px] text-[#a0a0c0]/70 font-mono">
+        <div className="text-xs text-[#a0a0c0]/70 font-mono">
           {subValue}
         </div>
       )}
@@ -118,18 +118,18 @@ const Result = ({ result, onRestart }) => {
       }
   }
 
-  // Medal Logic
-  const getMedalData = (netPnL, totalTrades) => {
-      if (totalTrades === 0) return { name: '佛系路人', uri: '/medals/medal_1.json', img: '/medals/1.png' };
-      if (netPnL < -50000) return { name: '慈善赌王', uri: '/medals/medal_2.json', img: '/medals/2.png' };
-      if (netPnL < 0) return { name: '韭菜', uri: '/medals/medal_3.json', img: '/medals/3.png' };
-      if (netPnL < 10000) return { name: '保本大师', uri: '/medals/medal_4.json', img: '/medals/4.png' };
-      if (netPnL < 50000) return { name: '顺势交易员', uri: '/medals/medal_5.json', img: '/medals/5.png' };
-      if (netPnL < 200000) return { name: '华尔街之狼', uri: '/medals/medal_6.json', img: '/medals/6.png' };
+  // Medal Logic - Based on Persona Title
+  const getMedalData = (title) => {
+      if (title === '佛系路人') return { name: '佛系路人', uri: '/medals/medal_1.json', img: '/medals/1.png' };
+      if (title === '慈善赌王') return { name: '慈善赌王', uri: '/medals/medal_2.json', img: '/medals/2.png' };
+      if (title === '韭菜') return { name: '韭菜', uri: '/medals/medal_3.json', img: '/medals/3.png' };
+      if (title === '保本大师') return { name: '保本大师', uri: '/medals/medal_4.json', img: '/medals/4.png' };
+      if (title === '顺势交易员') return { name: '顺势交易员', uri: '/medals/medal_5.json', img: '/medals/5.png' };
+      if (title === '华尔街之狼') return { name: '华尔街之狼', uri: '/medals/medal_6.json', img: '/medals/6.png' };
       return { name: '时间旅行者', uri: '/medals/medal_7.json', img: '/medals/7.png' };
   };
 
-  const medal = getMedalData(parseFloat(result.totalPnL), result.totalTrades);
+  const medal = getMedalData(personaTitle);
 
   const handleMint = () => {
       if (!address) return;
@@ -144,132 +144,132 @@ const Result = ({ result, onRestart }) => {
   };
 
   return (
-    <div className="h-screen font-sans flex items-center justify-center p-2 relative overflow-hidden text-[#e0e0e0]">
+    <div className="h-screen font-sans flex items-center justify-center p-4 relative overflow-hidden text-[#e0e0e0]">
       <AnimatedBackground />
       
-      <div className="w-full max-w-sm relative z-10 perspective-1000">
+      <div className="w-full max-w-2xl relative z-10 perspective-1000">
         <GlassCard 
           className="overflow-hidden flex flex-col items-center animate-in fade-in zoom-in duration-500 max-h-[95vh]"
           variant={isProfitable ? 'default' : 'danger'}
         >
           {/* Header Strip */}
           <div className={cn(
-            "w-full h-1 absolute top-0 left-0",
+            "w-full h-1.5 absolute top-0 left-0",
             isProfitable ? "bg-gradient-to-r from-[#00ff9d] to-[#00d4ff]" : "bg-gradient-to-r from-[#ff4466] to-[#ff9900]"
           )} />
 
-          <div className="p-4 w-full flex flex-col items-center relative h-full overflow-y-auto scrollbar-thin scrollbar-thumb-[#6450c8]/20">
+          <div className="p-8 w-full flex flex-col items-center relative h-full overflow-y-auto scrollbar-thin scrollbar-thumb-[#6450c8]/20">
             
             {/* Wallet Info Badge */}
             {isConnected && address && (
-              <div className="absolute top-2 right-2 text-[8px] font-mono text-[#a0a0c0] bg-[#0a0a1a]/50 px-1.5 py-0.5 rounded border border-[#6450c8]/30">
+              <div className="absolute top-4 right-4 text-xs font-mono text-[#a0a0c0] bg-[#0a0a1a]/50 px-2 py-1 rounded border border-[#6450c8]/30">
                 {address.slice(0, 6)}...{address.slice(-4)}
               </div>
             )}
 
             {/* Result Title */}
-            <div className="mb-2 text-center mt-1">
-              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#0a0a1a]/40 border border-[#6450c8]/20 mb-1">
-                <Trophy className="w-2 h-2 text-[#ffd700]" />
-                <span className="text-[9px] font-bold tracking-widest uppercase text-[#a0a0c0]">Report</span>
+            <div className="mb-4 text-center mt-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0a0a1a]/40 border border-[#6450c8]/20 mb-2">
+                <Trophy className="w-3 h-3 text-[#ffd700]" />
+                <span className="text-xs font-bold tracking-widest uppercase text-[#a0a0c0]">战报</span>
               </div>
               <h1 className={cn(
-                "text-2xl font-black tracking-tight mb-0.5 drop-shadow-lg",
+                "text-4xl font-black tracking-tight mb-1 drop-shadow-lg",
                 isProfitable ? "text-[#00ff9d]" : "text-[#ff4466]"
               )}>
-                {isProfitable ? 'PROFITABLE' : 'LIQUIDATED'}
+                {isProfitable ? '盈利' : '爆仓'}
               </h1>
-              <p className="text-[10px] text-[#a0a0c0] font-medium">{personaTitle}</p>
+              <p className="text-sm text-[#a0a0c0] font-medium">{personaTitle}</p>
             </div>
 
-            {/* Medal Showcase (Compact) */}
-            <div className="relative mb-3 group cursor-pointer perspective-500">
+            {/* Medal Showcase */}
+            <div className="relative mb-6 group cursor-pointer perspective-500">
               <div className={cn(
-                "absolute inset-0 blur-xl rounded-full opacity-30 group-hover:opacity-50 transition-opacity duration-500",
+                "absolute inset-0 blur-2xl rounded-full opacity-30 group-hover:opacity-50 transition-opacity duration-500",
                 isProfitable ? "bg-[#00ff9d]" : "bg-[#ff4466]"
               )} />
-              <div className="relative w-16 h-16 transform group-hover:scale-110 group-hover:rotate-y-12 transition-transform duration-500">
+              <div className="relative w-24 h-24 transform group-hover:scale-110 group-hover:rotate-y-12 transition-transform duration-500">
                 <img 
                   src={medal.img} 
                   alt={medal.name} 
-                  className="w-full h-full object-contain drop-shadow-xl" 
+                  className="w-full h-full object-contain drop-shadow-2xl" 
                 />
               </div>
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="px-1.5 py-0.5 bg-[#0a0a1a]/80 border border-[#ffd700]/30 rounded-full text-[9px] font-bold text-[#ffd700] shadow-lg backdrop-blur-sm">
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span className="px-2.5 py-1 bg-[#0a0a1a]/80 border border-[#ffd700]/30 rounded-full text-xs font-bold text-[#ffd700] shadow-lg backdrop-blur-sm">
                   {medal.name}
                 </span>
               </div>
             </div>
 
-            {/* Metrics Grid (Compact) */}
-            <div className="grid grid-cols-3 gap-1.5 w-full mb-3">
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-3 gap-3 w-full mb-6">
               <StatItem 
                 icon={TrendingUp}
-                label="PnL" 
+                label="盈亏" 
                 value={`${isProfitable ? '+' : ''}${parseFloat(result.totalPnL).toLocaleString()}`} 
                 type={isProfitable ? 'positive' : 'negative'}
               />
               <StatItem 
                 icon={AlertTriangle}
-                label="Drawdown" 
+                label="回撤" 
                 value={`-${result.maxDrawdown}%`} 
                 type="neutral"
               />
               <StatItem 
                 icon={Activity}
-                label="Trades" 
+                label="交易次数" 
                 value={result.totalTrades} 
                 type="neutral"
               />
             </div>
 
-            {/* AI Analysis (Roast) (Compact) */}
-            <div className="w-full bg-[#0a0a1a]/30 rounded-lg p-2 border border-[#6450c8]/20 mb-3 relative group">
-              <div className="absolute -top-1.5 left-2 px-1 bg-[#140a28] text-[8px] font-bold text-[#6450c8] border border-[#6450c8]/30 rounded flex items-center gap-1">
-                <Crown className="w-2 h-2" /> AI ROAST
+            {/* AI Analysis (Roast) */}
+            <div className="w-full bg-[#0a0a1a]/30 rounded-xl p-4 border border-[#6450c8]/20 mb-6 relative group">
+              <div className="absolute -top-2.5 left-4 px-2 bg-[#140a28] text-xs font-bold text-[#6450c8] border border-[#6450c8]/30 rounded flex items-center gap-1.5">
+                <Crown className="w-3 h-3" /> AI 锐评
               </div>
-              <p className="text-[10px] font-medium text-[#e0e0e0] text-center italic leading-relaxed opacity-90 mt-1">
+              <p className="text-base font-medium text-[#e0e0e0] text-center italic leading-relaxed opacity-90 mt-2">
                 "{result.summary}"
               </p>
-              <div className="w-8 h-[1px] bg-[#6450c8]/30 mx-auto my-1.5" />
-              <p className="text-[9px] text-[#a0a0c0] text-center font-mono leading-tight">
+              <div className="w-12 h-[1px] bg-[#6450c8]/30 mx-auto my-3" />
+              <p className="text-sm text-[#a0a0c0] text-center font-mono leading-relaxed">
                 {result.roast}
               </p>
             </div>
 
             {/* Action Area */}
-            <div className="w-full space-y-2 mt-auto">
+            <div className="w-full space-y-3 mt-auto">
               {isConnected ? (
                 <>
                   {isConfirmed ? (
-                    <div className="w-full py-1.5 bg-[#00ff9d]/10 border border-[#00ff9d]/30 rounded-lg flex flex-col items-center justify-center gap-0.5 animate-in slide-in-from-bottom-2">
-                      <span className="text-[#00ff9d] text-[10px] font-bold flex items-center gap-1">
-                        <Trophy className="w-2.5 h-2.5" /> Minted!
+                    <div className="w-full py-2.5 bg-[#00ff9d]/10 border border-[#00ff9d]/30 rounded-xl flex flex-col items-center justify-center gap-1 animate-in slide-in-from-bottom-2">
+                      <span className="text-[#00ff9d] text-sm font-bold flex items-center gap-1.5">
+                        <Trophy className="w-3.5 h-3.5" /> 铸造成功!
                       </span>
                       <a 
                         href={`https://sepolia.etherscan.io/tx/${hash}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-[8px] text-[#00ff9d]/70 hover:text-[#00ff9d] underline transition-colors"
+                        className="text-xs text-[#00ff9d]/70 hover:text-[#00ff9d] underline transition-colors"
                       >
-                        View on Explorer
+                        查看区块浏览器
                       </a>
                     </div>
                   ) : (
                     <button
                       onClick={handleMint}
                       disabled={isWritePending || isConfirming}
-                      className="w-full group relative overflow-hidden py-2 bg-gradient-to-r from-[#6450c8] to-[#ff4466] hover:from-[#7c66e3] hover:to-[#ff6685] text-white font-bold rounded-lg transition-all shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                      className="w-full group relative overflow-hidden py-3 bg-gradient-to-r from-[#6450c8] to-[#ff4466] hover:from-[#7c66e3] hover:to-[#ff6685] text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         {isWritePending || isConfirming ? (
                           <>
-                            <RefreshCw className="w-3 h-3 animate-spin" /> Minting...
+                            <RefreshCw className="w-4 h-4 animate-spin" /> 铸造中...
                           </>
                         ) : (
                           <>
-                            <Trophy className="w-3 h-3" /> Mint Medal (NFT)
+                            <Trophy className="w-4 h-4" /> 铸造勋章 (NFT)
                           </>
                         )}
                       </span>
@@ -278,21 +278,21 @@ const Result = ({ result, onRestart }) => {
                   )}
                 </>
               ) : (
-                 <div className="flex flex-col gap-2">
-                   <div className="p-1.5 bg-[#6450c8]/10 border border-[#6450c8]/30 rounded-lg text-center">
-                     <p className="text-[9px] text-[#6450c8] font-bold mb-1">Connect wallet to mint achievement</p>
-                     <div className="flex justify-center scale-90 origin-center">
-                       <ConnectButton showBalance={false} chainStatus="none" />
-                     </div>
-                   </div>
-                 </div>
+                <div className="flex flex-col gap-3">
+                  <div className="p-2.5 bg-[#6450c8]/10 border border-[#6450c8]/30 rounded-xl text-center">
+                    <p className="text-xs text-[#6450c8] font-bold mb-2">连接钱包以铸造成就</p>
+                    <div className="flex justify-center">
+                      <ConnectButton showBalance={false} chainStatus="none" />
+                    </div>
+                  </div>
+                </div>
               )}
 
               <button 
                 onClick={onRestart}
-                className="w-full py-2 bg-[#0a0a1a]/40 hover:bg-[#0a0a1a]/60 text-[#a0a0c0] hover:text-white font-medium rounded-lg border border-[#6450c8]/20 transition-all flex items-center justify-center gap-2 text-xs"
+                className="w-full py-3 bg-[#0a0a1a]/40 hover:bg-[#0a0a1a]/60 text-[#a0a0c0] hover:text-white font-medium rounded-xl border border-[#6450c8]/20 transition-all flex items-center justify-center gap-2 text-sm"
               >
-                <RefreshCw className="w-3 h-3" /> Try Again
+                <RefreshCw className="w-4 h-4" /> 再来一次
               </button>
             </div>
 
@@ -300,8 +300,8 @@ const Result = ({ result, onRestart }) => {
         </GlassCard>
         
         {/* Footer */}
-        <div className="mt-2 text-center">
-           <p className="text-[8px] text-[#a0a0c0]/50 font-mono uppercase tracking-widest">
+        <div className="mt-4 text-center">
+           <p className="text-xs text-[#a0a0c0]/50 font-mono uppercase tracking-widest">
              PolyChronos v0.1 • {new Date().toLocaleDateString()}
            </p>
         </div>

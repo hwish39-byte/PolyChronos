@@ -162,6 +162,11 @@ const Lobby = ({ onSelect, blindMode, setBlindMode }) => {
               ? `$${(volume / 1000000).toFixed(2)}M` 
               : `$${(volume / 1000).toFixed(2)}K`;
 
+            const difficultyColorClass = {
+                '极高': 'text-[#ff4466] border-[#ff4466]/50 bg-[#ff4466]/10',
+                '较低': 'text-[#00ff9d] border-[#00ff9d]/50 bg-[#00ff9d]/10'
+            }[scenario.difficulty] || 'text-[#00d4ff] border-[#00d4ff]/50 bg-[#00d4ff]/10';
+
             return (
               <div
                 key={scenario.id}
@@ -171,7 +176,7 @@ const Lobby = ({ onSelect, blindMode, setBlindMode }) => {
               >
                 <GlassCard className="p-6 cursor-pointer h-full group flex flex-col" variant="default">
                   <div className="flex justify-between items-start mb-4">
-                    <span className="px-3 py-1 text-xs font-bold text-[#ff4466] border border-[#ff4466]/50 rounded-full bg-[#ff4466]/10">
+                    <span className={`px-3 py-1 text-xs font-bold border rounded-full ${difficultyColorClass}`}>
                       {scenario.difficulty}
                     </span>
                     <Clock className="text-[#ffd700] group-hover:text-[#00d4ff] transition-colors" style={{ filter: 'drop-shadow(0 0 5px rgba(255,215,0,0.4))' }} />
@@ -228,6 +233,13 @@ const Lobby = ({ onSelect, blindMode, setBlindMode }) => {
             <GlassCard className="p-6 h-full flex flex-col justify-center items-center min-h-[300px]">
               <Clock className="w-16 h-16 mb-4 text-[#6450c8]" />
               <p className="text-sm text-[#a0a0c0]">更多历史时刻即将开放</p>
+            </GlassCard>
+          </div>
+
+          <div className="opacity-60 hover:opacity-100 transition-opacity duration-300">
+            <GlassCard className="p-6 h-full flex flex-col justify-center items-center min-h-[300px]">
+              <Clock className="w-16 h-16 mb-4 text-[#6450c8]" />
+              <p className="text-sm text-[#a0a0c0]">更多历史时刻即将开放，敬请期待</p>
             </GlassCard>
           </div>
         </div>

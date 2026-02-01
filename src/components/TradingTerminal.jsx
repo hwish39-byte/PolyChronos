@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Clock, ArrowRight, Activity, TrendingUp, TrendingDown, 
-  DollarSign, Zap, Play, AlertTriangle, Radio, Gauge, RotateCcw, LogOut
+  DollarSign, Zap, Play, AlertTriangle, Radio, Gauge, RotateCcw, LogOut, Pause
 } from 'lucide-react';
 import PriceChart from './PriceChart';
 import { SCENARIOS, TRUMP_SCRIPT, CRYPTO_NOISE } from '../constants/scenarios';
@@ -111,13 +111,6 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
   const equity = balance + (shares * currentPrice);
   const pnlPercent = ((equity - 100000) / 100000) * 100;
   const pnlValue = equity - 100000;
-
-  // Chart Data
-  const visibleData = useMemo(() => {
-    const endIdx = Math.floor(currentIndex) + 1;
-    const startIdx = Math.max(0, endIdx - 100);
-    return allData.slice(startIdx, endIdx);
-  }, [allData, currentIndex]);
 
   // --- Effects (Logic Ported from App.jsx) ---
 
@@ -593,13 +586,13 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
   }
 
   return (
-    <div className="flex h-screen font-sans overflow-hidden relative text-[#e0e0e0]">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a1a] font-sans text-[#e0e0e0]">
       <AnimatedBackground />
 
       {/* Toast */}
       {toastMsg && (
         <div className={cn(
-            "fixed top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl backdrop-blur-md border animate-in fade-in slide-in-from-top-5",
+            "fixed top-24 left-1/2 -translate-x-1/2 z-[70] px-6 py-3 rounded-full shadow-2xl backdrop-blur-md border animate-in fade-in slide-in-from-top-5",
             toastMsg.type === 'error' ? 'bg-red-500/20 border-red-500/50 text-red-200' : 'bg-green-500/20 border-green-500/50 text-green-200'
         )}>
             {toastMsg.text}
@@ -664,40 +657,49 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
           </div>
       )}
 
-      {/* Main Layout: Split View */}
-      <div className="flex w-full h-full relative z-0">
+      {/* Main App Frame - Scaled Down */}
+      <div className="w-[90%] max-w-6xl h-[85vh] flex rounded-3xl border border-[#6450c8]/30 overflow-hidden bg-[#140a28]/80 backdrop-blur-xl shadow-2xl relative z-10">
         
-        {/* LEFT PANEL: Chart & Header (75%) */}
+        {/* LEFT PANEL: Chart & Controls (75%) */}
         <div className="flex-[3] flex flex-col border-r border-[#6450c8]/30 relative bg-[#0a0a1a]/20">
             {/* Header */}
-            <header className="h-14 border-b border-[#6450c8]/30 flex items-center justify-between px-6 bg-[#140a28]/60 backdrop-blur-xl z-10">
+            <header className="h-16 border-b border-[#6450c8]/30 flex items-center justify-between px-6 bg-[#140a28]/60 backdrop-blur-xl z-10">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className={cn("w-2 h-2 rounded-full", isVolatile ? 'bg-[#ff4466] animate-ping' : 'bg-[#00ff88]')} />
                         <h1 className="text-sm font-bold text-[#f0e6ff] flex items-center gap-2">
-                            {SCENARIOS[0]?.title || 'Unknown Scenario'}
+                            {SCENARIOS[0]?.title || '未知场景'}
                             {blindMode && <span className="text-[10px] bg-[#ff4466]/20 text-[#ff4466] px-2 py-0.5 rounded-full border border-[#ff4466]/50">盲测</span>}
                         </h1>
                     </div>
                 </div>
 
-                {/* Speed Controls */}
-                <div className="flex items-center gap-2 bg-[#0a0a1a]/40 p-1 rounded-lg border border-[#6450c8]/20">
-                    <Clock size={14} className="text-[#a0a0c0] ml-2" />
-                    {[1, 2, 5, 10].map(m => (
-                        <button
-                            key={m}
-                            onClick={() => setUserSpeedMultiplier(m)}
-                            className={cn(
-                                "px-2 py-0.5 rounded text-[10px] font-bold transition-colors min-w-[30px]",
-                                userSpeedMultiplier === m 
-                                ? 'bg-[#00d4ff] text-[#0a0a1a]' 
-                                : 'text-[#a0a0c0] hover:text-white hover:bg-[#ffffff]/10'
-                            )}
-                        >
-                            x{m}
-                        </button>
-                    ))}
+                {/* Speed Controls & Progress */}
+                <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex items-center gap-2 bg-[#0a0a1a]/40 p-1 rounded-lg border border-[#6450c8]/20">
+                        <Clock size={12} className="text-[#a0a0c0] ml-1" />
+                        {[1, 2, 5, 10].map(m => (
+                            <button
+                                key={m}
+                                onClick={() => setUserSpeedMultiplier(m)}
+                                className={cn(
+                                    "px-2 py-0.5 rounded text-[10px] font-bold transition-colors min-w-[24px]",
+                                    userSpeedMultiplier === m 
+                                    ? 'bg-[#00d4ff] text-[#0a0a1a]' 
+                                    : 'text-[#a0a0c0] hover:text-white hover:bg-[#ffffff]/10'
+                                )}
+                            >
+                                x{m}
+                            </button>
+                        ))}
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-32 h-1 bg-[#ffffff]/10 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-gradient-to-r from-[#00d4ff] to-[#ff66cc] transition-all duration-300 ease-linear" 
+                            style={{ width: `${progress}%` }} 
+                        />
+                    </div>
                 </div>
             </header>
 
@@ -707,44 +709,87 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
                     <PriceDisplay price={currentPrice} isVolatile={isVolatile} />
                     <div className={cn("mt-1 text-sm font-medium flex items-center gap-2", isVolatile ? 'text-[#ff4466]' : 'text-[#00ff88]')}>
                         {isVolatile ? <TrendingDown size={16} /> : <TrendingUp size={16} />}
-                        {isVolatile ? 'HIGH VOLATILITY DETECTED' : 'MARKET STABLE'}
+                        {isVolatile ? '检测到高波动' : '市场平稳'}
                     </div>
                 </div>
                 
                 <div className="flex-1">
                     <PriceChart 
-                        data={visibleData} 
+                        data={allData} // Fixed: Pass allData to avoid slicing issues
                         blindMode={blindMode} 
                         currentIndex={currentIndex}
                     />
                 </div>
             </div>
+
+            {/* Bottom Controls Bar (Moved from Right Panel) */}
+            <div className="h-20 border-t border-[#6450c8]/30 bg-[#140a28]/40 px-6 flex items-center gap-4">
+                <button
+                    onClick={handleBuyClick}
+                    disabled={balance < 1}
+                    className="flex-1 py-3 bg-[#00ff88] hover:bg-[#00ff88]/80 text-[#0a0a1a] font-bold rounded-xl shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                    <span className="text-sm">买入 YES</span>
+                    <span className="text-[10px] opacity-70 font-mono bg-black/10 px-1.5 py-0.5 rounded">
+                        最大: ${(balance / currentPrice).toFixed(0)}
+                    </span>
+                </button>
+
+                <button
+                    onClick={() => handleSell()}
+                    disabled={shares <= 0}
+                    className="flex-1 py-3 bg-[#ff4466] hover:bg-[#ff4466]/80 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                    <span className="text-sm">卖出 YES</span>
+                    <span className="text-[10px] opacity-70 font-mono bg-white/20 px-1.5 py-0.5 rounded">
+                        全部: ${shares.toFixed(0)}
+                    </span>
+                </button>
+                
+                <div className="w-[1px] h-10 bg-[#6450c8]/30 mx-2" />
+
+                <button 
+                    onClick={() => setIsPaused(!isPaused)}
+                    className="w-14 h-12 bg-[#ffffff]/5 hover:bg-[#ffffff]/10 border border-[#ffffff]/10 text-[#00d4ff] rounded-xl transition-all flex items-center justify-center"
+                    title={isPaused ? '继续' : '暂停'}
+                >
+                    {isPaused ? <Play size={20} fill="currentColor" /> : <Pause size={20} fill="currentColor" />}
+                </button>
+
+                <button 
+                    onClick={handleSettle}
+                    className="w-32 h-12 bg-[#ffd700]/10 hover:bg-[#ffd700]/20 border border-[#ffd700]/30 text-[#ffd700] rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5"
+                >
+                    <LogOut size={14} /> 
+                    <span>立即结算</span>
+                </button>
+            </div>
         </div>
 
-        {/* RIGHT PANEL: Stats, Controls, News (25%) */}
+        {/* RIGHT PANEL: Stats & News (25%) */}
         <div className="flex-[1] min-w-[340px] flex flex-col bg-[#140a28]/40 backdrop-blur-md">
             
             {/* Top: Financial Stats */}
             <div className="p-6 space-y-4 border-b border-[#6450c8]/30 bg-[#0a0a1a]/40">
                 <div className="flex items-center gap-2 text-[#00d4ff] mb-2">
                     <Gauge className="w-4 h-4" />
-                    <span className="text-xs font-bold tracking-widest uppercase">Portfolio</span>
+                    <span className="text-xs font-bold tracking-widest uppercase">账户总览</span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-4">
                     <div className="space-y-1">
-                        <span className="text-[10px] text-[#a0a0c0] uppercase tracking-wider">Total Equity</span>
+                        <span className="text-[10px] text-[#a0a0c0] uppercase tracking-wider">总权益</span>
                         <div className="text-2xl font-bold text-white font-mono">${equity.toFixed(2)}</div>
                     </div>
                     <div className="space-y-1">
-                        <span className="text-[10px] text-[#a0a0c0] uppercase tracking-wider">Balance</span>
+                        <span className="text-[10px] text-[#a0a0c0] uppercase tracking-wider">可用余额</span>
                         <div className="text-xl font-bold text-[#a0a0c0] font-mono">${balance.toFixed(2)}</div>
                     </div>
                 </div>
 
                 <div className="pt-4 border-t border-[#ffffff]/5">
                     <div className="flex justify-between items-end">
-                        <span className="text-[10px] text-[#a0a0c0] uppercase tracking-wider">Unrealized PnL</span>
+                        <span className="text-[10px] text-[#a0a0c0] uppercase tracking-wider">未实现盈亏</span>
                         <div className={cn("text-xl font-bold font-mono", pnlValue >= 0 ? 'text-[#00ff88]' : 'text-[#ff4466]')}>
                             {pnlValue >= 0 ? '+' : ''}{pnlValue.toFixed(2)} <span className="text-sm opacity-70">({pnlPercent.toFixed(2)}%)</span>
                         </div>
@@ -752,58 +797,21 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
                 </div>
                 
                 <div className="flex justify-between items-center text-xs text-[#a0a0c0] font-mono bg-[#0a0a1a] p-2 rounded border border-[#ffffff]/5">
-                    <span>POS: {shares.toFixed(0)} YES</span>
-                    <span>AVG: ${avgPrice.toFixed(2)}</span>
+                    <span>持仓: {shares.toFixed(0)} YES</span>
+                    <span>均价: ${avgPrice.toFixed(2)}</span>
                 </div>
             </div>
 
-            {/* Middle: Controls */}
-            <div className="p-4 grid grid-cols-2 gap-3 border-b border-[#6450c8]/30 bg-[#1a1040]/20">
-                <button
-                    onClick={handleBuyClick}
-                    disabled={balance < 1}
-                    className="py-3 bg-[#00ff88] hover:bg-[#00ff88]/80 text-[#0a0a1a] font-bold rounded-xl shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex flex-col items-center justify-center gap-1"
-                >
-                    <span className="text-sm">BUY YES</span>
-                    <span className="text-[10px] opacity-70 font-mono">Max: ${(balance / currentPrice).toFixed(0)}</span>
-                </button>
-                <button
-                    onClick={() => handleSell()}
-                    disabled={shares <= 0}
-                    className="py-3 bg-[#ff4466] hover:bg-[#ff4466]/80 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex flex-col items-center justify-center gap-1"
-                >
-                    <span className="text-sm">SELL YES</span>
-                    <span className="text-[10px] opacity-70 font-mono">All: ${shares.toFixed(0)}</span>
-                </button>
-                
-                <div className="col-span-2 flex gap-3 pt-2">
-                     <button 
-                        onClick={() => setIsPaused(!isPaused)}
-                        className="flex-1 py-2 bg-[#ffffff]/5 hover:bg-[#ffffff]/10 border border-[#ffffff]/10 text-[#00d4ff] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2"
-                     >
-                        {isPaused ? <Play size={14} /> : <div className="w-3 h-3 border-2 border-[#00d4ff] border-l-transparent rounded-full animate-spin" />}
-                        {isPaused ? 'RESUME' : 'PAUSE'}
-                     </button>
-                     <button 
-                        onClick={handleSettle}
-                        className="flex-1 py-2 bg-[#ffd700]/10 hover:bg-[#ffd700]/20 border border-[#ffd700]/30 text-[#ffd700] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2"
-                     >
-                        <LogOut size={14} /> 
-                        立即结算
-                     </button>
-                </div>
-            </div>
-
-            {/* Bottom: News Feed */}
+            {/* Bottom: News Feed (Expanded) */}
             <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a1a]/30">
                 <div className="p-3 border-b border-[#6450c8]/20 flex items-center justify-between bg-[#140a28]/60">
                     <h3 className="text-xs font-bold text-[#a0a0c0] flex items-center gap-2 uppercase tracking-wider">
                         <Activity size={12} className="text-[#00d4ff]" />
-                        Live Feed
+                        实时快讯
                     </h3>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] animate-pulse" />
-                        <span className="text-[10px] text-[#00d4ff] font-mono">CONNECTED</span>
+                        <span className="text-[10px] text-[#00d4ff] font-mono">已连接</span>
                     </div>
                 </div>
                 
@@ -811,7 +819,7 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
                     {newsFeed.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-[#a0a0c0]/40 text-xs gap-2">
                             <div className="w-8 h-8 rounded-full border-2 border-dashed border-[#a0a0c0]/30 animate-spin-slow" />
-                            <span>Scanning Chain Data...</span>
+                            <span>正在扫描链上数据...</span>
                         </div>
                     )}
                     {newsFeed.map((news) => (
@@ -826,7 +834,7 @@ const TradingTerminal = ({ slug, blindMode, onFinish, preloadedData }) => {
                         >
                             <div className="flex justify-between items-center mb-1 opacity-60 text-[10px] font-mono">
                                 <span>{news.time}</span>
-                                {news.isReal && <span className="text-[#ff4466] font-bold tracking-wider">BREAKING</span>}
+                                {news.isReal && <span className="text-[#ff4466] font-bold tracking-wider">突发</span>}
                             </div>
                             <p className="leading-relaxed">{news.content}</p>
                         </div>

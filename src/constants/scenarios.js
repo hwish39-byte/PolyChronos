@@ -3,7 +3,7 @@ export const SCENARIOS = [
     id: 'trump-rally',
     title: '2024年7月·特朗普宾州集会',
     slug: 'presidential-election-winner-2024',
-    difficulty: '极高',
+    difficulty: '较低',
     volatility: '剧烈',
     description: '一次突发的枪击事件彻底改变了选情走向。舆论反转只在毫秒之间，你能否在混乱中捕捉到Alpha？',
     tags: ['政治', '突发', '黑天鹅']

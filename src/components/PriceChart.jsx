@@ -91,13 +91,13 @@ const PriceChart = ({ data, currentIndex, children }) => {
             allowDataOverflow={true}
           />
           <YAxis 
-            domain={[0.55, 0.75]} 
+            domain={[0.45, 0.85]} 
             hide={true} 
           />
           <Tooltip 
             contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
             itemStyle={{ color: '#3b82f6' }}
-            formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Price']}
+            formatter={(value) => [`$${Number(value).toFixed(2)}`, '价格']}
             labelFormatter={(label) => new Date(label * 1000).toLocaleTimeString()}
           />
           
